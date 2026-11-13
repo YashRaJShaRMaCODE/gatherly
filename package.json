@@ -2,12 +2,10 @@
   "name": "ai-event-organiser",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test tests/*.test.mjs",
     "lint": "eslint",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy"

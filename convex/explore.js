@@ -1,6 +1,5 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { matchesEventLocation } from "./event-rules";
 
 // Get featured events (high registration count or recent)
 export const getFeaturedEvents = query({
@@ -41,9 +40,14 @@ export const getEventsByLocation = query({
       .filter((q) => q.gte(q.field("startDate"), now))
       .collect();
 
-    if (args.city || args.state) {
-      events = events.filter((event) =>
-        matchesEventLocation(event, args.city, args.state)
+    // Filter by city or state
+    if (args.city) {
+      events = events.filter(
+        (e) => e.city.toLowerCase() === args.city.toLowerCase()
+      );
+    } else if (args.state) {
+      events = events.filter(
+        (e) => e.state?.toLowerCase() === args.state.toLowerCase()
       );
     }
 
