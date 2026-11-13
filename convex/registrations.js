@@ -1,6 +1,7 @@
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { registrationAction } from "./event-rules";
 
 // Generate unique QR code ID
 function generateQRCode() {
@@ -22,12 +23,6 @@ export const registerForEvent = mutation({
       throw new Error("Event not found");
     }
 
-    // Check if event is full
-    if (event.registrationCount >= event.capacity) {
-      throw new Error("Event is full");
-    }
-
-    // Check if user already registered
     const existingRegistration = await ctx.db
       .query("registrations")
       .withIndex("by_event_user", (q) =>
@@ -35,12 +30,37 @@ export const registerForEvent = mutation({
       )
       .unique();
 
-    if (existingRegistration) {
+    const action = registrationAction(
+      existingRegistration?.status,
+      event.registrationCount,
+      event.capacity,
+    );
+    if (action === "full") {
+      throw new Error("Event is full");
+    }
+    if (action === "already_registered") {
       throw new Error("You are already registered for this event");
     }
 
-    // Create registration
+    const now = Date.now();
     const qrCode = generateQRCode();
+    if (action === "reactivate") {
+      await ctx.db.patch(existingRegistration._id, {
+        attendeeName: args.attendeeName,
+        attendeeEmail: args.attendeeEmail,
+        qrCode,
+        checkedIn: false,
+        checkedInAt: undefined,
+        status: "confirmed",
+        registeredAt: now,
+      });
+      await ctx.db.patch(args.eventId, {
+        registrationCount: event.registrationCount + 1,
+      });
+      return existingRegistration._id;
+    }
+
+    // Create registration
     const registrationId = await ctx.db.insert("registrations", {
       eventId: args.eventId,
       userId: user._id,
@@ -49,7 +69,7 @@ export const registerForEvent = mutation({
       qrCode: qrCode,
       checkedIn: false,
       status: "confirmed",
-      registeredAt: Date.now(),
+      registeredAt: now,
     });
 
     // Update event registration count

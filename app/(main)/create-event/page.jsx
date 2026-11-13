@@ -38,6 +38,7 @@ import AIEventCreator from "./_components/ai-event-creator";
 import UpgradeModal from "@/components/upgrade-modal";
 import { CATEGORIES } from "@/lib/data";
 import Image from "next/image";
+import { validateEventDetails } from "@/convex/event-rules";
 
 // HH:MM in 24h
 const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -55,9 +56,12 @@ const eventSchema = z.object({
   address: z.string().optional(),
   city: z.string().min(1, "City is required"),
   state: z.string().optional(),
-  capacity: z.number().min(1, "Capacity must be at least 1"),
+  capacity: z.number().int().min(1, "Capacity must be a positive whole number"),
   ticketType: z.enum(["free", "paid"]).default("free"),
-  ticketPrice: z.number().optional(),
+  ticketPrice: z.preprocess(
+    (value) => (typeof value === "number" && Number.isNaN(value) ? undefined : value),
+    z.number().optional(),
+  ),
   coverImage: z.string().optional(),
   themeColor: z.string().default("#1e3a8a"),
 });
@@ -82,6 +86,7 @@ export default function CreateEventPage() {
     handleSubmit,
     watch,
     setValue,
+    setError,
     control,
     formState: { errors },
   } = useForm({
@@ -147,8 +152,19 @@ export default function CreateEventPage() {
         toast.error("Please select both date and time for start and end.");
         return;
       }
-      if (end.getTime() <= start.getTime()) {
-        toast.error("End date/time must be after start date/time.");
+      const validationError = validateEventDetails({
+        startDate: start.getTime(),
+        endDate: end.getTime(),
+        capacity: data.capacity,
+        ticketType: data.ticketType,
+        ticketPrice: data.ticketPrice,
+      });
+      if (validationError) {
+        setError(validationError.field, {
+          type: "validate",
+          message: validationError.message,
+        });
+        toast.error(validationError.message);
         return;
       }
 
@@ -182,7 +198,7 @@ export default function CreateEventPage() {
         country: "India",
         capacity: data.capacity,
         ticketType: data.ticketType,
-        ticketPrice: data.ticketPrice || undefined,
+        ticketPrice: data.ticketType === "paid" ? data.ticketPrice : undefined,
         coverImage: data.coverImage || undefined,
         themeColor: data.themeColor,
         hasPro,
@@ -526,11 +542,18 @@ export default function CreateEventPage() {
             </div>
 
             {ticketType === "paid" && (
-              <Input
-                type="number"
-                placeholder="Ticket price ₹"
-                {...register("ticketPrice", { valueAsNumber: true })}
-              />
+              <>
+                <Input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="Ticket price ₹"
+                  {...register("ticketPrice", { valueAsNumber: true })}
+                />
+                {errors.ticketPrice && (
+                  <p className="text-sm text-red-400">{errors.ticketPrice.message}</p>
+                )}
+              </>
             )}
           </div>
 
@@ -539,6 +562,8 @@ export default function CreateEventPage() {
             <Label className="text-sm">Capacity</Label>
             <Input
               type="number"
+              min="1"
+              step="1"
               {...register("capacity", { valueAsNumber: true })}
               placeholder="Ex: 100"
             />

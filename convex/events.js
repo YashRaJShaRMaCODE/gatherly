@@ -1,6 +1,7 @@
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { validateEventDetails } from "./event-rules";
 
 // Create a new event
 export const createEvent = mutation({
@@ -27,6 +28,9 @@ export const createEvent = mutation({
   },
   handler: async (ctx, args) => {
     try {
+      const validationError = validateEventDetails(args);
+      if (validationError) throw new Error(validationError.message);
+
       const user = await ctx.runQuery(internal.users.getCurrentUser);
 
       // SERVER-SIDE CHECK: Verify event limit for Free users

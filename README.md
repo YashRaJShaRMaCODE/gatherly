@@ -13,6 +13,8 @@ Discover and create events with AI-powered planning, Clerk authentication, and C
 - **Unsplash** (cover images)
 - **Tailwind CSS 4** + **shadcn/ui**
 
+Event creation validates future start/end times, whole-number capacity, and positive paid-ticket prices on both the form and Convex mutation. Attendees can rebook a cancelled registration when a seat is available, and location discovery matches both city and state when both are provided.
+
 ## Prerequisites
 
 - Node.js 18+
@@ -122,6 +124,7 @@ npm start
 | `npm run build` | Production build |
 | `npm start` | Start production server |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run event validation, registration and location-rule tests |
 
 ## Project Structure
 
