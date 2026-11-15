@@ -53,6 +53,10 @@ Required variables:
 - Free organizers can have one free event at a time; deleting it releases the slot. Pro-created events do not consume the free slot. Pro access is verified on the server; direct client-supplied plan flags are never trusted.
 - Paid ticket prices are informational only. Attendees pay organizers outside Spott; there is no checkout, payment capture, refund handling, or payout flow.
 
+### Subscription setup
+
+The current paid offer is for individual event organizers, not teams. The upgrade modal uses Clerk's `PricingTable`, and feature checks expect a public user plan with the exact slug `pro`. In Clerk Dashboard, enable Billing and configure that user plan with the actual features and a price/interval validated with organizers. The app does not define or collect a price in source code. Keep billing in test mode until checkout, renewal, cancellation, expiry, and server-side Pro entitlement have been verified. Organization-wide plans and shared team workspaces are not implemented. See [Clerk's B2C Billing guide](https://clerk.com/docs/guides/billing/for-b2c).
+
 ### 3. Start Convex
 
 In a separate terminal:
