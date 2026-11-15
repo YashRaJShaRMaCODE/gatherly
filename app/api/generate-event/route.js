@@ -96,7 +96,10 @@ export async function POST(request) {
     reservationId = quota.reservationId;
     shouldRefundGeneration = true;
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+      httpOptions: { timeout: 120_000 },
+    });
     const response = await ai.models.generateContent({
       model: "gemini-3.8-flash",
       contents: prompt,

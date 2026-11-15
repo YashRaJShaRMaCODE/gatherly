@@ -1,7 +1,11 @@
 import { internal } from "./_generated/api";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { aiGenerationsAfterRefund, verifyAiQuotaRefundProof } from "../lib/aiQuota.mjs";
+import {
+  aiGenerationsAfterRefund,
+  getAiGenerationQuotaState,
+  verifyAiQuotaRefundProof,
+} from "../lib/aiQuota.mjs";
 
 // Store or update user from Clerk
 export const store = mutation({
@@ -96,19 +100,25 @@ export const consumeAiGeneration = mutation({
 
     const now = Date.now();
     const today = new Date(now).toISOString().slice(0, 10);
-    const used = user.aiUsageDate === today ? user.aiGenerationsToday ?? 0 : 0;
+    const quotaState = getAiGenerationQuotaState(
+      user.aiUsageDate,
+      user.aiGenerationsToday ?? 0,
+      user.aiGenerationReservations ?? [],
+      today,
+      now
+    );
+    const used = quotaState.used;
     if (used >= 5) {
       const reset = new Date(now);
       reset.setUTCHours(24, 0, 0, 0);
       return { allowed: false, remaining: 0, resetsAt: reset.toISOString() };
     }
 
-    const reservations = user.aiUsageDate === today ? user.aiGenerationReservations ?? [] : [];
-    const reservationId = Array.from({ length: 4 }, () => Math.random().toString(36).slice(2)).join("");
+    const reservationId = `r:${now}:${crypto.randomUUID()}`;
     await ctx.db.patch(user._id, {
       aiUsageDate: today,
       aiGenerationsToday: used + 1,
-      aiGenerationReservations: [...reservations, reservationId],
+      aiGenerationReservations: [...quotaState.reservations, reservationId],
       updatedAt: now,
     });
     return { allowed: true, remaining: 4 - used, reservationId };

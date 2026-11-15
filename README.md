@@ -50,6 +50,7 @@ Required variables:
 ### Product limits
 
 - AI event drafts require sign-in and are capped at five attempts per user per UTC day. Gemini output is only a draft; review it before publishing.
+- Gemini requests time out after two minutes. If a server stops before it can release an in-flight quota reservation, that reservation expires after ten minutes.
 - Free organizers can have one free event at a time; deleting it releases the slot. Pro-created events do not consume the free slot. Pro access is verified on the server; direct client-supplied plan flags are never trusted.
 - Paid ticket prices are informational only. Attendees pay organizers outside Spott; there is no checkout, payment capture, refund handling, or payout flow.
 
