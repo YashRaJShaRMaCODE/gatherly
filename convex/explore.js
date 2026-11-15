@@ -1,6 +1,10 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
 
+const MAX_FEATURED_SCAN = 500;
+const clampLimit = (limit, fallback, maximum) =>
+  Math.min(Math.max(Math.floor(limit ?? fallback), 1), maximum);
+
 // Get featured events (high registration count or recent)
 export const getFeaturedEvents = query({
   args: {
@@ -10,15 +14,14 @@ export const getFeaturedEvents = query({
     const now = Date.now();
     const events = await ctx.db
       .query("events")
-      .withIndex("by_start_date")
-      .filter((q) => q.gte(q.field("startDate"), now))
-      .order("desc")
-      .collect();
+      .withIndex("by_start_date", (q) => q.gte("startDate", now))
+      .order("asc")
+      .take(MAX_FEATURED_SCAN);
 
     // Sort by registration count for featured
     const featured = events
       .sort((a, b) => b.registrationCount - a.registrationCount)
-      .slice(0, args.limit ?? 3);
+      .slice(0, clampLimit(args.limit, 3, 50));
 
     return featured;
   },
@@ -34,24 +37,26 @@ export const getEventsByLocation = query({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    let events = await ctx.db
-      .query("events")
-      .withIndex("by_start_date")
-      .filter((q) => q.gte(q.field("startDate"), now))
-      .collect();
-
-    // Filter by city or state
-    if (args.city) {
-      events = events.filter(
-        (e) => e.city.toLowerCase() === args.city.toLowerCase()
-      );
-    } else if (args.state) {
-      events = events.filter(
-        (e) => e.state?.toLowerCase() === args.state.toLowerCase()
-      );
+    const limit = clampLimit(args.limit, 4, 50);
+    if (args.city?.trim()) {
+      return await ctx.db
+        .query("events")
+        .withIndex("by_city_start_date", (q) =>
+          q.eq("city", args.city.trim()).gte("startDate", now)
+        )
+        .order("asc")
+        .take(limit);
     }
-
-    return events.slice(0, args.limit ?? 4);
+    if (args.state?.trim()) {
+      return await ctx.db
+        .query("events")
+        .withIndex("by_state_start_date", (q) =>
+          q.eq("state", args.state.trim()).gte("startDate", now)
+        )
+        .order("asc")
+        .take(limit);
+    }
+    return [];
   },
 });
 
@@ -64,14 +69,14 @@ export const getPopularEvents = query({
     const now = Date.now();
     const events = await ctx.db
       .query("events")
-      .withIndex("by_start_date")
-      .filter((q) => q.gte(q.field("startDate"), now))
-      .collect();
+      .withIndex("by_start_date", (q) => q.gte("startDate", now))
+      .order("asc")
+      .take(MAX_FEATURED_SCAN);
 
     // Sort by registration count
     const popular = events
       .sort((a, b) => b.registrationCount - a.registrationCount)
-      .slice(0, args.limit ?? 6);
+      .slice(0, clampLimit(args.limit, 6, 50));
 
     return popular;
   },
@@ -85,13 +90,13 @@ export const getEventsByCategory = query({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const events = await ctx.db
+    return await ctx.db
       .query("events")
-      .withIndex("by_category", (q) => q.eq("category", args.category))
-      .filter((q) => q.gte(q.field("startDate"), now))
-      .collect();
-
-    return events.slice(0, args.limit ?? 12);
+      .withIndex("by_category_start_date", (q) =>
+        q.eq("category", args.category).gte("startDate", now)
+      )
+      .order("asc")
+      .take(clampLimit(args.limit, 12, 50));
   },
 });
 
@@ -101,8 +106,7 @@ export const getCategoryCounts = query({
     const now = Date.now();
     const events = await ctx.db
       .query("events")
-      .withIndex("by_start_date")
-      .filter((q) => q.gte(q.field("startDate"), now))
+      .withIndex("by_start_date", (q) => q.gte("startDate", now))
       .collect();
 
     // Count events by category

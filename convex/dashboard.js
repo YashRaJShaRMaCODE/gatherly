@@ -22,25 +22,23 @@ export const getEventDashboard = query({
       throw new Error("You are not authorized to view this dashboard");
     }
 
-    // Get all registrations
-    const registrations = await ctx.db
-      .query("registrations")
-      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
-
-    // Calculate stats
-    const totalRegistrations = registrations.filter(
-      (r) => r.status === "confirmed"
-    ).length;
-    const checkedInCount = registrations.filter(
-      (r) => r.checkedIn && r.status === "confirmed"
-    ).length;
+    const totalRegistrations = event.registrationCount;
+    let checkedInCount = event.checkedInCount;
+    if (checkedInCount === undefined) {
+      const registrations = await ctx.db
+        .query("registrations")
+        .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+        .collect();
+      checkedInCount = registrations.filter(
+        (registration) => registration.checkedIn && registration.status === "confirmed"
+      ).length;
+    }
     const pendingCount = totalRegistrations - checkedInCount;
 
-    // Calculate revenue for paid events
-    let totalRevenue = 0;
+    // Payments happen directly with organizers and are not tracked here.
+    let estimatedTicketValue = 0;
     if (event.ticketType === "paid" && event.ticketPrice) {
-      totalRevenue = checkedInCount * event.ticketPrice;
+      estimatedTicketValue = checkedInCount * event.ticketPrice;
     }
 
     // Calculate check-in rate
@@ -71,7 +69,7 @@ export const getEventDashboard = query({
         pendingCount,
         capacity: event.capacity,
         checkInRate,
-        totalRevenue,
+        estimatedTicketValue,
         hoursUntilEvent,
         isEventToday,
         isEventPast,

@@ -15,7 +15,7 @@ Discover and create events with AI-powered planning, Clerk authentication, and C
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20.9+
 - Accounts on [Convex](https://convex.dev), [Clerk](https://clerk.com), [Google AI Studio](https://aistudio.google.com), and [Unsplash Developers](https://unsplash.com/developers)
 
 ## Local Setup
@@ -45,6 +45,13 @@ Required variables:
 | `CLERK_JWT_ISSUER_DOMAIN` | Clerk JWT issuer (Frontend API URL) |
 | `NEXT_PUBLIC_UNSPLASH_ACCESS_KEY` | Unsplash API access key |
 | `GEMINI_API_KEY` | Google Gemini API key |
+| `ENTITLEMENT_SIGNING_SECRET` | Shared 32+ character secret for signed Clerk Pro access proofs and server-only AI quota refunds (set in Next.js and Convex; never expose it to the browser) |
+
+### Product limits
+
+- AI event drafts require sign-in and are capped at five attempts per user per UTC day. Gemini output is only a draft; review it before publishing.
+- Free organizers can have one free event at a time; deleting it releases the slot. Pro-created events do not consume the free slot. Pro access is verified on the server; direct client-supplied plan flags are never trusted.
+- Paid ticket prices are informational only. Attendees pay organizers outside Spott; there is no checkout, payment capture, refund handling, or payout flow.
 
 ### 3. Start Convex
 
@@ -93,12 +100,14 @@ npx convex deploy
 
 Copy the production `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_DEPLOYMENT` into your hosting provider's environment variables.
 
-### Deploy Next.js (Vercel recommended)
+### Deploy Next.js
 
-1. Push the repo to GitHub
-2. Import the project in [Vercel](https://vercel.com)
-3. Add all environment variables from `.env.example`
-4. Deploy
+Choose a hosting plan whose current terms permit commercial use and whose runtime fits a dynamic Next.js app. Confirm pricing, request limits, sleep behavior, and database/network compatibility before launch; a free tier may be suitable for a demo but is not assumed production-ready.
+
+1. Import the project into the chosen host
+2. Add all environment variables from `.env.example`
+3. Set `ENTITLEMENT_SIGNING_SECRET` to the same strong random value in the Next.js host and Convex production environment
+4. Deploy and verify sign-in, event creation, AI quotas, organizer access, and attendee registration on the production URL
 
 Or build locally:
 
@@ -110,6 +119,7 @@ npm start
 ### Post-deploy checklist
 
 - [ ] All env vars set on Vercel/hosting platform
+- [ ] Set the same `ENTITLEMENT_SIGNING_SECRET` in the Next.js host and Convex production environment
 - [ ] `CLERK_JWT_ISSUER_DOMAIN` set in Convex production env
 - [ ] Clerk allowed origins include your production domain
 - [ ] Convex production deployment is linked (`npx convex deploy`)
@@ -122,6 +132,8 @@ npm start
 | `npm run build` | Production build |
 | `npm start` | Start production server |
 | `npm run lint` | Run ESLint |
+
+GitHub Actions runs lint, build, and a production dependency audit on pushes and pull requests to `main`.
 
 ## Project Structure
 

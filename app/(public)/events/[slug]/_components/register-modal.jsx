@@ -23,10 +23,8 @@ import { Separator } from "@/components/ui/separator";
 export default function RegisterModal({ event, isOpen, onClose }) {
   const router = useRouter();
   const { user } = useUser();
-  const [name, setName] = useState(user?.fullName || "");
-  const [email, setEmail] = useState(
-    user?.primaryEmailAddress?.emailAddress || ""
-  );
+  const [name, setName] = useState(null);
+  const [email, setEmail] = useState(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const { mutate: registerForEvent, isLoading } = useConvexMutation(
@@ -36,7 +34,9 @@ export default function RegisterModal({ event, isOpen, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name.trim() || !email.trim()) {
+    const attendeeName = (name ?? user?.fullName ?? "").trim();
+    const attendeeEmail = (email ?? user?.primaryEmailAddress?.emailAddress ?? "").trim();
+    if (!attendeeName || !attendeeEmail) {
       toast.error("Please fill in all fields");
       return;
     }
@@ -44,8 +44,8 @@ export default function RegisterModal({ event, isOpen, onClose }) {
     try {
       await registerForEvent({
         eventId: event._id,
-        attendeeName: name,
-        attendeeEmail: email,
+        attendeeName,
+        attendeeEmail,
       });
 
       setIsSuccess(true);
@@ -125,9 +125,10 @@ export default function RegisterModal({ event, isOpen, onClose }) {
             <Input
               id="name"
               type="text"
-              value={name}
+              value={name ?? user?.fullName ?? ""}
               onChange={(e) => setName(e.target.value)}
               placeholder="John Doe"
+              maxLength={120}
               required
             />
           </div>
@@ -138,17 +139,18 @@ export default function RegisterModal({ event, isOpen, onClose }) {
             <Input
               id="email"
               type="email"
-              value={email}
+              value={email ?? user?.primaryEmailAddress?.emailAddress ?? ""}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="john@example.com"
+              maxLength={254}
               required
             />
           </div>
 
           {/* Terms */}
           <p className="text-xs text-muted-foreground">
-            By registering, you agree to receive event updates and reminders via
-            email.
+            Your registration name and email are shared with the organizer for
+            attendance management. Payments, if any, are made directly to the organizer.
           </p>
 
           {/* Actions */}

@@ -8,18 +8,20 @@ export const searchEvents = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    if (!args.query || args.query.trim().length < 2) {
+    const searchTerm = args.query.trim();
+    if (searchTerm.length < 2 || searchTerm.length > 100) {
       return [];
     }
+    const limit = Math.min(Math.max(Math.floor(args.limit ?? 5), 1), 50);
 
     const now = Date.now();
 
     // Search by title
     const searchResults = await ctx.db
       .query("events")
-      .withSearchIndex("search_title", (q) => q.search("title", args.query))
+      .withSearchIndex("search_title", (q) => q.search("title", searchTerm))
       .filter((q) => q.gte(q.field("startDate"), now))
-      .take(args.limit ?? 5);
+      .take(limit);
 
     return searchResults;
   },

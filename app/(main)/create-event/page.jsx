@@ -166,6 +166,14 @@ export default function CreateEventPage() {
         return;
       }
 
+      let entitlementProof;
+      if (hasPro) {
+        const response = await fetch("/api/entitlement-proof", { method: "POST" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Could not verify your Pro plan.");
+        entitlementProof = result.proof;
+      }
+
       await createEvent({
         title: data.title,
         description: data.description,
@@ -185,7 +193,7 @@ export default function CreateEventPage() {
         ticketPrice: data.ticketPrice || undefined,
         coverImage: data.coverImage || undefined,
         themeColor: data.themeColor,
-        hasPro,
+        entitlementProof,
       });
 
       toast.success("Event created successfully! 🎉");
@@ -215,7 +223,7 @@ export default function CreateEventPage() {
           <h1 className="text-4xl font-bold">Create Event</h1>
           {!hasPro && (
             <p className="text-sm text-muted-foreground mt-2">
-              Free: {currentUser?.freeEventsCreated || 0}/1 events created
+              Free slots used: {currentUser?.freeEventsCreated || 0}/1
             </p>
           )}
         </div>

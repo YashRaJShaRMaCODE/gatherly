@@ -44,8 +44,7 @@ export default function AIEventCreator({ onEventGenerated }) {
       setIsOpen(false);
       setPrompt("");
     } catch (error) {
-      toast.error("Failed to generate event. Please try again.");
-      console.error(error);
+      toast.error(error.message || "Failed to generate event. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -66,7 +65,7 @@ export default function AIEventCreator({ onEventGenerated }) {
             AI Event Creator
           </DialogTitle>
           <DialogDescription>
-            Describe your event idea and let AI create the details for you
+            Describe your event idea. You have five AI drafts per day; review the result before publishing.
           </DialogDescription>
         </DialogHeader>
 

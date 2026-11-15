@@ -25,6 +25,9 @@ export default defineSchema({
 
     // Organizer tracking (User Subscription)
     freeEventsCreated: v.number(), // Track free event limit (1 free)
+    aiUsageDate: v.optional(v.string()),
+    aiGenerationsToday: v.optional(v.number()),
+    aiGenerationReservations: v.optional(v.array(v.string())),
 
     // Timestamps
     createdAt: v.number(),
@@ -63,6 +66,8 @@ export default defineSchema({
     ticketType: v.union(v.literal("free"), v.literal("paid")),
     ticketPrice: v.optional(v.number()), // Paid at event offline
     registrationCount: v.number(),
+    checkedInCount: v.optional(v.number()),
+    createdWithPro: v.optional(v.boolean()),
 
     // Customization
     coverImage: v.optional(v.string()),
@@ -75,6 +80,9 @@ export default defineSchema({
     .index("by_organizer", ["organizerId"])
     .index("by_category", ["category"])
     .index("by_start_date", ["startDate"])
+    .index("by_city_start_date", ["city", "startDate"])
+    .index("by_state_start_date", ["state", "startDate"])
+    .index("by_category_start_date", ["category", "startDate"])
     .index("by_slug", ["slug"])
     .searchIndex("search_title", { searchField: "title" }),
 

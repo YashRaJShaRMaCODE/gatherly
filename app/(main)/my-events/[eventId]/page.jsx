@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePaginatedQuery } from "convex/react";
 import { useParams, useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -23,6 +24,7 @@ import {
 import { useConvexQuery, useConvexMutation } from "@/hooks/use-convex-query";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { buildCsv, safeCsvFilename } from "@/lib/csv.mjs";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,12 +52,20 @@ export default function EventDashboardPage() {
   );
 
   // Fetch registrations
-  const { data: registrations, isLoading: loadingRegistrations } =
-    useConvexQuery(api.registrations.getEventRegistrations, { eventId });
+  const {
+    results: registrations,
+    status: registrationsStatus,
+    loadMore: loadMoreRegistrations,
+    isLoading: loadingRegistrations,
+  } = usePaginatedQuery(
+    api.registrations.getEventRegistrations,
+    { eventId },
+    { initialNumItems: 50 }
+  );
 
   // Delete event mutation
   const { mutate: deleteEvent, isLoading: isDeleting } = useConvexMutation(
-    api.dashboard.deleteEvent
+    api.events.deleteEvent
   );
 
   const handleDelete = async () => {
@@ -75,38 +85,41 @@ export default function EventDashboardPage() {
   };
 
   const handleExportCSV = () => {
+    if (registrationsStatus !== "Exhausted") {
+      toast.error("Load all attendee pages before exporting the complete list.");
+      return;
+    }
     if (!registrations || registrations.length === 0) {
       toast.error("No registrations to export");
       return;
     }
 
-    const csvContent = [
+    const csvContent = buildCsv([
       [
         "Name",
         "Email",
-        "Registered At",
+        "Registered At (UTC)",
         "Checked In",
-        "Checked In At",
+        "Checked In At (UTC)",
         "QR Code",
       ],
       ...registrations.map((reg) => [
         reg.attendeeName,
         reg.attendeeEmail,
-        new Date(reg.registeredAt).toLocaleString(),
+        new Date(reg.registeredAt).toISOString(),
         reg.checkedIn ? "Yes" : "No",
-        reg.checkedInAt ? new Date(reg.checkedInAt).toLocaleString() : "-",
+        reg.checkedInAt ? new Date(reg.checkedInAt).toISOString() : "",
         reg.qrCode,
       ]),
-    ]
-      .map((row) => row.join(","))
-      .join("\n");
+    ]);
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF", csvContent], { type: "text/csv;charset=utf-8" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${dashboardData?.event.title || "event"}_registrations.csv`;
+    a.download = safeCsvFilename(dashboardData?.event.title);
     a.click();
+    window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
     toast.success("CSV exported successfully");
   };
 
@@ -262,8 +275,9 @@ export default function EventDashboardPage() {
                   <TrendingUp className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">₹{stats.totalRevenue}</p>
-                  <p className="text-sm text-muted-foreground">Revenue</p>
+                  <p className="text-2xl font-bold">₹{stats.estimatedTicketValue}</p>
+                  <p className="text-sm text-muted-foreground">Estimated ticket value</p>
+                  <p className="text-xs text-muted-foreground">Payments are collected by the organizer and are not tracked here.</p>
                 </div>
               </CardContent>
             </Card>
@@ -324,7 +338,7 @@ export default function EventDashboardPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, email, or QR code..."
+                placeholder="Search loaded attendees by name, email, or QR code..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -333,6 +347,8 @@ export default function EventDashboardPage() {
             <Button
               variant="outline"
               onClick={handleExportCSV}
+              disabled={registrationsStatus !== "Exhausted"}
+              title={registrationsStatus !== "Exhausted" ? "Load every page before exporting" : undefined}
               className="gap-2"
             >
               <Download className="w-4 h-4" />
@@ -354,6 +370,17 @@ export default function EventDashboardPage() {
                 No attendees found
               </div>
             )}
+            {registrationsStatus === "CanLoadMore" || registrationsStatus === "LoadingMore" ? (
+              <div className="flex justify-center pt-3">
+                <Button
+                  variant="outline"
+                  onClick={() => loadMoreRegistrations(50)}
+                  disabled={registrationsStatus === "LoadingMore"}
+                >
+                  {registrationsStatus === "LoadingMore" ? "Loading..." : "Load more attendees"}
+                </Button>
+              </div>
+            ) : null}
           </TabsContent>
         </Tabs>
       </div>
