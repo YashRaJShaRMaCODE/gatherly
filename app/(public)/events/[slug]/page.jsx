@@ -8,6 +8,7 @@ import Image from "next/image";
 import { format } from "date-fns";
 import {
   Calendar,
+  CalendarPlus,
   MapPin,
   Users,
   Clock,
@@ -29,6 +30,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getCategoryIcon, getCategoryLabel } from "@/lib/data";
 import RegisterModal from "./_components/register-modal";
+import { buildCalendarEvent, calendarFilename } from "@/lib/calendarEvent.mjs";
 
 // Utility function to darken a color
 function darkenColor(color, amount) {
@@ -73,6 +75,21 @@ export default function EventDetailPage() {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(url);
       toast.success("Link copied to clipboard!");
+    }
+  };
+
+  const handleAddToCalendar = () => {
+    try {
+      const file = new Blob([buildCalendarEvent(event)], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = calendarFilename(event.slug);
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Calendar invite downloaded.");
+    } catch {
+      toast.error("Could not create the calendar invite.");
     }
   };
 
@@ -341,6 +358,14 @@ export default function EventDetailPage() {
                 >
                   <Share2 className="w-4 h-4" />
                   Share Event
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={handleAddToCalendar}
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  Add to calendar
                 </Button>
               </CardContent>
             </Card>
