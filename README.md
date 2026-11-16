@@ -45,6 +45,8 @@ Required variables:
 | `CLERK_JWT_ISSUER_DOMAIN` | Clerk JWT issuer (Frontend API URL) |
 | `NEXT_PUBLIC_UNSPLASH_ACCESS_KEY` | Unsplash API access key |
 | `GEMINI_API_KEY` | Google Gemini API key |
+| `NEXT_PUBLIC_SITE_URL` | Verified production HTTPS URL; enables canonical metadata, indexing, and sitemap |
+| `NEXT_PUBLIC_LEADHUB_URL` | Public HTTPS base URL for the shared EatItAll LeadHub signup widget |
 | `ENTITLEMENT_SIGNING_SECRET` | Shared 32+ character secret for signed Clerk Pro access proofs and server-only AI quota refunds (set in Next.js and Convex; never expose it to the browser) |
 
 ### Product limits
@@ -53,6 +55,7 @@ Required variables:
 - Gemini requests time out after two minutes. If a server stops before it can release an in-flight quota reservation, that reservation expires after ten minutes.
 - Free organizers can have one free event at a time; deleting it releases the slot. Pro-created events do not consume the free slot. Pro access is verified on the server; direct client-supplied plan flags are never trusted.
 - Paid ticket prices are informational only. Attendees pay organizers outside Spott; there is no checkout, payment capture, refund handling, or payout flow.
+- Event pages offer a downloadable `.ics` calendar invite. It includes public event details only, not attendee information.
 
 ### Subscription setup
 

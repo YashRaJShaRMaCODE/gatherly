@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import LeadCapture from "@/components/lead-capture";
 
 export default function LandingPage() {
   return (
@@ -69,6 +70,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      <LeadCapture />
     </div>
   );
 }

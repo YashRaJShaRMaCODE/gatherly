@@ -8,10 +8,29 @@ import { ConvexClientProvider } from "@/components/convex-client-provider";
 import SetupRequired from "@/components/setup-required";
 import { isAppConfigured } from "@/lib/env";
 import { Toaster } from "sonner";
+import { securePublicOrigin } from "@/lib/publicOrigin.mjs";
+
+const siteUrl = securePublicOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+const secureSiteUrl = siteUrl ? new URL(siteUrl) : undefined;
 
 export const metadata = {
-  title: "Spott - Delightful Events Start Here",
-  description: "Discover and create amazing events",
+  metadataBase: secureSiteUrl,
+  title: "Spott | Discover and plan better events",
+  description: "Find events worth showing up for, or turn an idea into a polished event draft with Spott.",
+  applicationName: "Spott",
+  alternates: secureSiteUrl ? { canonical: secureSiteUrl } : undefined,
+  openGraph: {
+    title: "Spott | Discover and plan better events",
+    description: "Find events worth showing up for, or turn an idea into a polished event draft with Spott.",
+    siteName: "Spott",
+    type: "website",
+    url: secureSiteUrl?.toString(),
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Spott | Discover and plan better events",
+    description: "Find events worth showing up for, or turn an idea into a polished event draft with Spott.",
+  },
 };
 
 export const dynamic = "force-dynamic";
