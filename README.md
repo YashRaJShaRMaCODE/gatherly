@@ -158,3 +158,5 @@ proxy.js       → Clerk route protection (Next.js 16)
 ## Tutorial
 
 Based on the [Full Stack AI Event Organiser tutorial](https://www.youtube.com/watch?v=4keJJzL-VCM).
+
+The landing page signup also offers an optional, consent-gated “Our other products” suggestion. The related-product request runs only after the visitor checks its separate consent box; suggestions come from LeadHub and are not personalized from account activity. Both widgets require the approved HTTPS `NEXT_PUBLIC_LEADHUB_URL` and remain absent otherwise.
