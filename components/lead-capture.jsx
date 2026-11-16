@@ -13,7 +13,15 @@ export default function LeadCapture() {
         <h2 id="updates-title" className="text-3xl font-semibold tracking-tight md:text-4xl">Make the next good plan happen.</h2>
         <p className="mt-3 max-w-xl text-sm leading-6 text-white/65">Get occasional product and event-planning updates. Confirm your email first; unsubscribe whenever you like.</p>
       </div>
-      <div data-leadhub="gatherly" data-theme="dark" className="min-w-0 md:w-[28rem]" />
+      <div
+        data-leadhub="gatherly"
+        data-theme="dark"
+        data-leadhub-action="Get Spott updates"
+        data-leadhub-placeholder="you@example.com"
+        data-leadhub-consent="Email me occasional Spott and event-planning updates. Unsubscribe anytime."
+        className="min-w-0 md:w-[28rem]"
+      />
+      <div data-leadhub-recommendations="gatherly" className="min-w-0 text-sm text-white/70 md:col-span-2" />
       <Script src={`${leadHubUrl}/embed.js`} strategy="afterInteractive" />
     </section>
   );
